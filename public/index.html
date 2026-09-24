@@ -4,23 +4,40 @@
   <meta charset="UTF-8">
   <title>TP Integrador Node/Express — Abigail Arriagada</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 60px auto; padding: 0 20px; color: #222; }
+    body { font-family: system-ui, sans-serif; max-width: 680px; margin: 60px auto; padding: 0 20px; color: #222; }
     h1 { color: #6B21A8; }
+    h2 { color: #6B21A8; font-size: 1.1rem; margin-top: 28px; }
     code { background: #f4f0f8; padding: 2px 6px; border-radius: 4px; }
+    li { margin-bottom: 4px; }
   </style>
 </head>
 <body>
   <h1>TP Integrador — Node &amp; Express</h1>
   <p>
-    Módulo 6: este archivo se sirve como contenido estático mediante
-    <code>express.static()</code>. En los próximos módulos este proyecto va a
-    sumar conexión a base de datos (Módulo 7) y una API con autenticación
-    (Módulo 8).
+    Este archivo se sirve como contenido estático mediante <code>express.static()</code>.
+    El proyecto se construye en tres partes: servidor y archivos planos (Módulo 6),
+    base de datos MySQL con SQL manual y ORM (Módulo 7), y API con autenticación (Módulo 8).
   </p>
-  <p>Rutas públicas disponibles por ahora:</p>
+
+  <h2>Módulo 6</h2>
   <ul>
     <li><code>GET /</code> — esta página (HTML)</li>
     <li><code>GET /status</code> — estado del servidor (JSON)</li>
+  </ul>
+
+  <h2>Módulo 7 — SQL manual (mysql2)</h2>
+  <ul>
+    <li><code>GET /usuarios</code> — lista de usuarios (admite <code>?nombre=</code>, <code>?page=</code> y <code>?limit=</code>)</li>
+    <li><code>PUT /usuarios/:id</code> — actualiza nombre y/o email</li>
+    <li><code>DELETE /usuarios/:id</code> — elimina un usuario</li>
+    <li><code>POST /usuarios/registro-transaccional</code> — registra usuario + pedido en una transacción</li>
+    <li><code>GET /pedidos</code>, <code>POST /pedidos</code>, <code>PUT /pedidos/:id</code>, <code>DELETE /pedidos/:id</code> — CRUD de pedidos</li>
+  </ul>
+
+  <h2>Módulo 7 — ORM (Sequelize)</h2>
+  <ul>
+    <li><code>GET /usuarios-orm</code> — lista de usuarios con el ORM</li>
+    <li><code>GET /usuarios-orm/:id/pedidos</code> — usuario con sus pedidos (relación 1:N con <code>include</code>)</li>
   </ul>
 </body>
 </html>
