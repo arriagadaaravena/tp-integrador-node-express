@@ -1,0 +1,252 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "TP Integrador — API Node & Express",
+    "version": "3.0.0",
+    "description": "API RESTful del TP Integrador (Módulos 6, 7 y 8). Las rutas marcadas con candado requieren un JWT: primero haz POST /login, copia el token y pégalo en el botón 'Authorize' (sin escribir 'Bearer').\n\nTodas las respuestas siguen el formato { status, message, data }."
+  },
+  "servers": [{ "url": "http://localhost:3000" }],
+  "tags": [
+    { "name": "Autenticación" },
+    { "name": "Usuarios" },
+    { "name": "Productos" },
+    { "name": "Pedidos" },
+    { "name": "Archivos" },
+    { "name": "Estado" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "schemas": {
+      "Respuesta": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "example": "success" },
+          "message": { "type": "string" },
+          "data": { "nullable": true }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "example": "error" },
+          "message": { "type": "string" },
+          "data": { "nullable": true, "example": null }
+        }
+      }
+    },
+    "responses": {
+      "SinToken": {
+        "description": "Falta el token, es inválido o expiró",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "NoEncontrado": {
+        "description": "El recurso no existe",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "DatosInvalidos": {
+        "description": "Faltan campos o tienen un formato inválido",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    },
+    "parameters": {
+      "Id": { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+    }
+  },
+  "paths": {
+    "/status": {
+      "get": {
+        "tags": ["Estado"],
+        "summary": "Estado del servidor",
+        "responses": { "200": { "description": "Servidor funcionando", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Respuesta" } } } } }
+      }
+    },
+    "/registro": {
+      "post": {
+        "tags": ["Autenticación"],
+        "summary": "Registrar un usuario nuevo",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "required": ["nombre", "email", "password"],
+            "properties": {
+              "nombre": { "type": "string", "example": "Ana Pérez" },
+              "email": { "type": "string", "example": "ana@example.com" },
+              "password": { "type": "string", "example": "123456", "description": "Mínimo 6 caracteres" }
+            }
+          } } }
+        },
+        "responses": {
+          "201": { "description": "Usuario registrado" },
+          "400": { "$ref": "#/components/responses/DatosInvalidos" },
+          "409": { "description": "El email ya está registrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/login": {
+      "post": {
+        "tags": ["Autenticación"],
+        "summary": "Iniciar sesión y obtener un JWT",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "required": ["email", "password"],
+            "properties": {
+              "email": { "type": "string", "example": "camila.rojas@example.com" },
+              "password": { "type": "string", "example": "123456" }
+            }
+          } } }
+        },
+        "responses": {
+          "200": { "description": "Login correcto; data.token contiene el JWT" },
+          "400": { "$ref": "#/components/responses/DatosInvalidos" },
+          "401": { "description": "Email o contraseña incorrectos", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/perfil": {
+      "get": {
+        "tags": ["Autenticación"],
+        "summary": "Perfil del usuario autenticado (incluye su foto, relación 1:1)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Perfil del usuario" }, "401": { "$ref": "#/components/responses/SinToken" } }
+      }
+    },
+    "/usuarios": {
+      "get": {
+        "tags": ["Usuarios"],
+        "summary": "Listar usuarios (SQL manual)",
+        "parameters": [
+          { "name": "nombre", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "Lista de usuarios, sin contraseña" } }
+      }
+    },
+    "/usuarios/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/Id" }],
+      "put": {
+        "tags": ["Usuarios"],
+        "summary": "Actualizar nombre y/o email",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "nombre": { "type": "string" }, "email": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Usuario actualizado" }, "400": { "$ref": "#/components/responses/DatosInvalidos" }, "401": { "$ref": "#/components/responses/SinToken" }, "404": { "$ref": "#/components/responses/NoEncontrado" } }
+      },
+      "delete": {
+        "tags": ["Usuarios"],
+        "summary": "Eliminar un usuario",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Usuario eliminado" }, "401": { "$ref": "#/components/responses/SinToken" }, "404": { "$ref": "#/components/responses/NoEncontrado" } }
+      }
+    },
+    "/usuarios/registro-transaccional": {
+      "post": {
+        "tags": ["Usuarios"],
+        "summary": "Registrar usuario + primer pedido en una transacción (Módulo 7)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": {
+          "nombre": { "type": "string" }, "email": { "type": "string" }, "password": { "type": "string" },
+          "producto": { "type": "string" }, "monto": { "type": "number" }, "forzarError": { "type": "boolean", "description": "true para probar el rollback" }
+        } } } } },
+        "responses": { "201": { "description": "Registrado" }, "401": { "$ref": "#/components/responses/SinToken" }, "500": { "description": "Transacción revertida" } }
+      }
+    },
+    "/usuarios-orm": {
+      "get": { "tags": ["Usuarios"], "summary": "Listar usuarios con el ORM (Módulo 7)", "responses": { "200": { "description": "Lista de usuarios" } } }
+    },
+    "/usuarios-orm/{id}/pedidos": {
+      "parameters": [{ "$ref": "#/components/parameters/Id" }],
+      "get": { "tags": ["Usuarios"], "summary": "Usuario con sus pedidos (relación 1:N)", "responses": { "200": { "description": "Usuario y pedidos" }, "404": { "$ref": "#/components/responses/NoEncontrado" } } }
+    },
+    "/productos": {
+      "get": {
+        "tags": ["Productos"],
+        "summary": "Listar productos",
+        "parameters": [
+          { "name": "nombre", "in": "query", "schema": { "type": "string" } },
+          { "name": "precioMax", "in": "query", "schema": { "type": "number" } }
+        ],
+        "responses": { "200": { "description": "Lista de productos" } }
+      },
+      "post": {
+        "tags": ["Productos"],
+        "summary": "Crear un producto",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["nombre", "precio"], "properties": { "nombre": { "type": "string", "example": "Parlante bluetooth" }, "precio": { "type": "number", "example": 24990 } } } } } },
+        "responses": { "201": { "description": "Producto creado" }, "400": { "$ref": "#/components/responses/DatosInvalidos" }, "401": { "$ref": "#/components/responses/SinToken" } }
+      }
+    },
+    "/productos/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/Id" }],
+      "get": { "tags": ["Productos"], "summary": "Obtener un producto", "responses": { "200": { "description": "Producto" }, "404": { "$ref": "#/components/responses/NoEncontrado" } } },
+      "put": {
+        "tags": ["Productos"],
+        "summary": "Actualizar un producto",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "nombre": { "type": "string" }, "precio": { "type": "number" } } } } } },
+        "responses": { "200": { "description": "Producto actualizado" }, "400": { "$ref": "#/components/responses/DatosInvalidos" }, "401": { "$ref": "#/components/responses/SinToken" }, "404": { "$ref": "#/components/responses/NoEncontrado" } }
+      },
+      "delete": {
+        "tags": ["Productos"],
+        "summary": "Eliminar un producto",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Producto eliminado" }, "401": { "$ref": "#/components/responses/SinToken" }, "404": { "$ref": "#/components/responses/NoEncontrado" } }
+      }
+    },
+    "/pedidos": {
+      "get": {
+        "tags": ["Pedidos"],
+        "summary": "Listar pedidos",
+        "parameters": [{ "name": "usuarioId", "in": "query", "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Lista de pedidos" } }
+      },
+      "post": {
+        "tags": ["Pedidos"],
+        "summary": "Crear un pedido",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["usuarioId", "producto", "monto"], "properties": { "usuarioId": { "type": "integer" }, "producto": { "type": "string" }, "monto": { "type": "number" } } } } } },
+        "responses": { "201": { "description": "Pedido creado" }, "400": { "$ref": "#/components/responses/DatosInvalidos" }, "401": { "$ref": "#/components/responses/SinToken" }, "404": { "$ref": "#/components/responses/NoEncontrado" } }
+      }
+    },
+    "/pedidos/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/Id" }],
+      "put": {
+        "tags": ["Pedidos"],
+        "summary": "Actualizar un pedido",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "producto": { "type": "string" }, "monto": { "type": "number" } } } } } },
+        "responses": { "200": { "description": "Pedido actualizado" }, "401": { "$ref": "#/components/responses/SinToken" }, "404": { "$ref": "#/components/responses/NoEncontrado" } }
+      },
+      "delete": {
+        "tags": ["Pedidos"],
+        "summary": "Eliminar un pedido",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Pedido eliminado" }, "401": { "$ref": "#/components/responses/SinToken" }, "404": { "$ref": "#/components/responses/NoEncontrado" } }
+      }
+    },
+    "/pedidos/{id}/productos": {
+      "parameters": [{ "$ref": "#/components/parameters/Id" }],
+      "get": { "tags": ["Pedidos"], "summary": "Productos de un pedido (relación N:M)", "responses": { "200": { "description": "Pedido con productos y cantidades" }, "404": { "$ref": "#/components/responses/NoEncontrado" } } },
+      "post": {
+        "tags": ["Pedidos"],
+        "summary": "Agregar un producto a un pedido",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["productoId"], "properties": { "productoId": { "type": "integer", "example": 1 }, "cantidad": { "type": "integer", "example": 2 } } } } } },
+        "responses": { "201": { "description": "Producto agregado" }, "400": { "$ref": "#/components/responses/DatosInvalidos" }, "401": { "$ref": "#/components/responses/SinToken" }, "404": { "$ref": "#/components/responses/NoEncontrado" } }
+      }
+    },
+    "/upload": {
+      "post": {
+        "tags": ["Archivos"],
+        "summary": "Subir foto de perfil (JPG, PNG o WEBP, máx. 2 MB)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "multipart/form-data": { "schema": { "type": "object", "required": ["archivo"], "properties": { "archivo": { "type": "string", "format": "binary" } } } } } },
+        "responses": { "201": { "description": "Archivo subido y asociado al perfil" }, "400": { "description": "Tipo o tamaño no permitido, o sin archivo", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }, "401": { "$ref": "#/components/responses/SinToken" } }
+      }
+    }
+  }
+}

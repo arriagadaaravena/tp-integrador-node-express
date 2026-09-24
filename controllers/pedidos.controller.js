@@ -108,4 +108,56 @@ async function eliminarPedido(req, res, next) {
   }
 }
 
-module.exports = { listarPedidos, crearPedido, actualizarPedido, eliminarPedido };
+// ---------- Módulo 8: relación N:M Pedido <-> Producto (ORM) ----------
+
+const pedidoOrmService = require('../services/pedidoOrm.service');
+
+// GET /pedidos/:id/productos  (pública)
+async function listarProductosDePedido(req, res, next) {
+  try {
+    const pedido = await pedidoOrmService.obtenerConProductos(req.params.id);
+    if (!pedido) {
+      return res.status(404).json({ status: 'error', message: `No existe un pedido con id ${req.params.id}`, data: null });
+    }
+    res.json({
+      status: 'success',
+      message: 'Pedido con sus productos (relación N:M)',
+      data: pedido,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// POST /pedidos/:id/productos  (protegida)
+async function agregarProductoAPedido(req, res, next) {
+  try {
+    const { productoId } = req.body;
+    const cantidad = req.body.cantidad === undefined ? 1 : Number(req.body.cantidad);
+
+    if (!Number.isInteger(cantidad) || cantidad <= 0) {
+      return res.status(400).json({ status: 'error', message: 'La cantidad debe ser un número entero mayor que 0', data: null });
+    }
+
+    const pedido = await pedidoOrmService.agregarProducto(req.params.id, productoId, cantidad);
+    if (!pedido) {
+      return res.status(404).json({ status: 'error', message: 'El pedido o el producto indicado no existe', data: null });
+    }
+    res.status(201).json({
+      status: 'success',
+      message: 'Producto agregado al pedido correctamente',
+      data: pedido,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = {
+  listarPedidos,
+  crearPedido,
+  actualizarPedido,
+  eliminarPedido,
+  listarProductosDePedido,
+  agregarProductoAPedido,
+};
