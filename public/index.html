@@ -4,40 +4,59 @@
   <meta charset="UTF-8">
   <title>TP Integrador Node/Express — Abigail Arriagada</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 680px; margin: 60px auto; padding: 0 20px; color: #222; }
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 60px auto; padding: 0 20px; color: #222; }
     h1 { color: #6B21A8; }
     h2 { color: #6B21A8; font-size: 1.1rem; margin-top: 28px; }
     code { background: #f4f0f8; padding: 2px 6px; border-radius: 4px; }
     li { margin-bottom: 4px; }
+    .lock { font-size: 0.85rem; color: #6B21A8; }
+    a { color: #6B21A8; }
   </style>
 </head>
 <body>
   <h1>TP Integrador — Node &amp; Express</h1>
   <p>
     Este archivo se sirve como contenido estático mediante <code>express.static()</code>.
-    El proyecto se construye en tres partes: servidor y archivos planos (Módulo 6),
-    base de datos MySQL con SQL manual y ORM (Módulo 7), y API con autenticación (Módulo 8).
+    El proyecto se construyó en tres partes: servidor y archivos planos (Módulo 6),
+    base de datos MySQL con SQL manual y ORM (Módulo 7), y API RESTful con
+    autenticación JWT y subida de archivos (Módulo 8).
+  </p>
+  <p>
+    📄 Documentación interactiva de la API: <a href="/api-docs">/api-docs</a> (Swagger).
+    Las rutas marcadas con 🔒 requieren el token que entrega <code>POST /login</code>.
   </p>
 
-  <h2>Módulo 6</h2>
+  <h2>Autenticación (Módulo 8)</h2>
+  <ul>
+    <li><code>POST /registro</code> — crea una cuenta</li>
+    <li><code>POST /login</code> — devuelve un JWT</li>
+    <li><code>GET /perfil</code> <span class="lock">🔒</span> — datos del usuario autenticado y su foto</li>
+    <li><code>POST /upload</code> <span class="lock">🔒</span> — sube una foto de perfil (JPG, PNG o WEBP, máx. 2 MB)</li>
+  </ul>
+
+  <h2>Productos (Módulo 8)</h2>
+  <ul>
+    <li><code>GET /productos</code> — lista (admite <code>?nombre=</code> y <code>?precioMax=</code>)</li>
+    <li><code>GET /productos/:id</code> — un producto</li>
+    <li><code>POST /productos</code>, <code>PUT /productos/:id</code>, <code>DELETE /productos/:id</code> <span class="lock">🔒</span></li>
+  </ul>
+
+  <h2>Usuarios y pedidos (Módulo 7)</h2>
+  <ul>
+    <li><code>GET /usuarios</code> — lista (admite <code>?nombre=</code>, <code>?page=</code> y <code>?limit=</code>)</li>
+    <li><code>PUT /usuarios/:id</code>, <code>DELETE /usuarios/:id</code> <span class="lock">🔒</span></li>
+    <li><code>POST /usuarios/registro-transaccional</code> <span class="lock">🔒</span> — usuario + pedido en una transacción</li>
+    <li><code>GET /pedidos</code> — lista (admite <code>?usuarioId=</code>)</li>
+    <li><code>POST /pedidos</code>, <code>PUT /pedidos/:id</code>, <code>DELETE /pedidos/:id</code> <span class="lock">🔒</span></li>
+    <li><code>GET /pedidos/:id/productos</code> — productos de un pedido (relación N:M)</li>
+    <li><code>POST /pedidos/:id/productos</code> <span class="lock">🔒</span> — agrega un producto a un pedido</li>
+    <li><code>GET /usuarios-orm</code> y <code>GET /usuarios-orm/:id/pedidos</code> — consultas con el ORM (relación 1:N)</li>
+  </ul>
+
+  <h2>Servidor (Módulo 6)</h2>
   <ul>
     <li><code>GET /</code> — esta página (HTML)</li>
     <li><code>GET /status</code> — estado del servidor (JSON)</li>
-  </ul>
-
-  <h2>Módulo 7 — SQL manual (mysql2)</h2>
-  <ul>
-    <li><code>GET /usuarios</code> — lista de usuarios (admite <code>?nombre=</code>, <code>?page=</code> y <code>?limit=</code>)</li>
-    <li><code>PUT /usuarios/:id</code> — actualiza nombre y/o email</li>
-    <li><code>DELETE /usuarios/:id</code> — elimina un usuario</li>
-    <li><code>POST /usuarios/registro-transaccional</code> — registra usuario + pedido en una transacción</li>
-    <li><code>GET /pedidos</code>, <code>POST /pedidos</code>, <code>PUT /pedidos/:id</code>, <code>DELETE /pedidos/:id</code> — CRUD de pedidos</li>
-  </ul>
-
-  <h2>Módulo 7 — ORM (Sequelize)</h2>
-  <ul>
-    <li><code>GET /usuarios-orm</code> — lista de usuarios con el ORM</li>
-    <li><code>GET /usuarios-orm/:id/pedidos</code> — usuario con sus pedidos (relación 1:N con <code>include</code>)</li>
   </ul>
 </body>
 </html>
