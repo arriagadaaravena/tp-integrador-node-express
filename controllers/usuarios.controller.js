@@ -50,7 +50,18 @@ async function actualizarUsuario(req, res, next) {
       });
     }
 
-    const actualizado = await usuarioService.actualizarUsuario(id, req.body);
+    // Módulo 8: el email es UNIQUE en la tabla; si ya lo usa otro usuario
+    // se responde 409 (conflicto) en vez de un error 500 de MySQL.
+    const { nombre, email } = req.body;
+    if (email !== undefined && (await usuarioService.emailEnUso(email, id))) {
+      return res.status(409).json({
+        status: 'error',
+        message: 'Ese email ya está registrado por otro usuario',
+        data: null,
+      });
+    }
+
+    const actualizado = await usuarioService.actualizarUsuario(id, { nombre, email });
     if (!actualizado) {
       return res.status(400).json({
         status: 'error',
@@ -59,10 +70,15 @@ async function actualizarUsuario(req, res, next) {
       });
     }
 
+    // Solo se devuelven los campos que realmente se pueden modificar.
+    const cambios = {};
+    if (nombre !== undefined) cambios.nombre = nombre;
+    if (email !== undefined) cambios.email = email;
+
     res.json({
       status: 'success',
       message: `Usuario ${id} actualizado correctamente`,
-      data: { id: Number(id), ...req.body },
+      data: { id: Number(id), ...cambios },
     });
   } catch (error) {
     next(error);
@@ -97,6 +113,17 @@ async function eliminarUsuario(req, res, next) {
 async function registrarUsuarioConPedido(req, res, next) {
   try {
     const { nombre, email, password, producto, monto, forzarError } = req.body;
+
+    // Módulo 8: se revisa el email antes de abrir la transacción, para
+    // responder 409 con un mensaje claro en vez del error interno de MySQL.
+    if (await usuarioService.emailEnUso(email)) {
+      return res.status(409).json({
+        status: 'error',
+        message: 'Ya existe un usuario registrado con ese email',
+        data: null,
+      });
+    }
+
     const resultado = await usuarioService.registrarUsuarioConPedido({
       nombre,
       email,

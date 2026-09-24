@@ -3,6 +3,7 @@
 // de las rutas y controladores siguiendo la arquitectura modular pedida
 // por la pauta (routes / controllers / middlewares / services).
 
+const bcrypt = require('bcryptjs');
 const { pool } = require('../config/db');
 
 // Lección 2 — Obtención de información, con filtro opcional por nombre
@@ -28,6 +29,16 @@ async function getUsuarios({ nombre, page, limit } = {}) {
 
   const [rows] = await pool.query(sql, params);
   return rows;
+}
+
+// Módulo 8: revisa si un email ya pertenece a OTRO usuario, para responder
+// 409 en vez de dejar que MySQL rechace el UNIQUE con un error 500.
+async function emailEnUso(email, excluirId = null) {
+  const [rows] = await pool.query(
+    'SELECT id FROM usuarios WHERE email = ? AND id <> ?',
+    [email, excluirId === null ? 0 : excluirId]
+  );
+  return rows.length > 0;
 }
 
 async function existeUsuario(id) {
@@ -75,13 +86,18 @@ async function eliminarUsuario(id) {
 // que el rollback deja la base de datos sin cambios (ni el usuario ni el
 // pedido quedan guardados).
 async function registrarUsuarioConPedido({ nombre, email, password, producto, monto, forzarError }) {
+  // Iteración Módulo 8: antes la contraseña se guardaba tal cual llegaba.
+  // Ahora se hashea con bcrypt, igual que en POST /registro, para que estos
+  // usuarios también puedan iniciar sesión en POST /login.
+  const passwordHash = await bcrypt.hash(String(password), 10);
+
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
 
     const [usuarioResult] = await connection.query(
       'INSERT INTO usuarios (nombre, email, password) VALUES (?, ?, ?)',
-      [nombre, email, password]
+      [nombre, email, passwordHash]
     );
     const usuarioId = usuarioResult.insertId;
 
@@ -106,6 +122,7 @@ async function registrarUsuarioConPedido({ nombre, email, password, producto, mo
 
 module.exports = {
   getUsuarios,
+  emailEnUso,
   existeUsuario,
   actualizarUsuario,
   eliminarUsuario,
