@@ -63,10 +63,15 @@ Cada petición queda registrada en `logs/log.txt` con fecha, hora, método y rut
 
 ### Reflexión
 
-Lo que más me costó de este módulo fue entender el orden en que Express
-ejecuta los middlewares: al principio no entendía por qué si ponía el logger
-después de las rutas, no se registraba nada. Aprendí que el orden en que se
-declaran los `app.use()` importa.
+Lo que más me costó de este módulo fue entender la estructura de carpetas:
+al principio no tenía claro por qué había que separar el código en `routes`,
+`controllers` y `middlewares` en vez de tener todo en un solo archivo, y me
+costó ubicar qué lógica iba en cada lugar. Con la práctica fui entendiendo
+que cada carpeta cumple un rol distinto (rutas define el "por dónde", los
+controllers el "qué responder", y los middlewares las funciones que se
+ejecutan en el camino de una petición), y también entendí por qué conviene
+usar `path.join(__dirname, ...)` para armar rutas de archivos en vez de
+escribirlas directamente como texto.
 
 ## Próximos pasos (no incluidos todavía en esta entrega)
 
