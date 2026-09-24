@@ -2,5 +2,7 @@ node_modules/
 .env
 logs/log.txt
 logs/transacciones-fallidas.log
+uploads/*
+!uploads/.gitkeep
 .DS_Store
 npm-debug.log*

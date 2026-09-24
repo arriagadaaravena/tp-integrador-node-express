@@ -1,10 +1,11 @@
 // models/index.js
-// Módulo 7 — Acceso a datos con ORM (Lección 5) y relaciones (Lección 6).
+// Instancia de Sequelize + definición de todos los modelos y sus relaciones.
 //
-// Se configura una instancia de Sequelize independiente del pool "crudo"
-// de config/db.js, apuntando a la misma base de datos. Esto permite
-// comparar, sobre los mismos datos, el resultado de una consulta SQL
-// manual (mysql2) contra la misma consulta hecha con el ORM.
+// Módulo 7: Usuario 1:N Pedido.
+// Módulo 8: se completan los tres tipos de relación que pide la consigna:
+//   - 1:1  Usuario <-> Perfil          (foto de usuario subida con POST /upload)
+//   - 1:N  Usuario <-> Pedido          (ya existía desde el Módulo 7)
+//   - N:M  Pedido  <-> Producto        (tabla intermedia pedido_productos)
 
 require('dotenv').config();
 const { Sequelize } = require('sequelize');
@@ -23,9 +24,30 @@ const sequelize = new Sequelize(
 
 const Usuario = require('./usuario.model')(sequelize);
 const Pedido = require('./pedido.model')(sequelize);
+const Producto = require('./producto.model')(sequelize);
+const PedidoProducto = require('./pedidoProducto.model')(sequelize);
+const Perfil = require('./perfil.model')(sequelize);
 
-// Relación 1:N (Lección 6) — un Usuario tiene muchos Pedidos.
+// 1:N — un Usuario tiene muchos Pedidos.
 Usuario.hasMany(Pedido, { foreignKey: 'usuarioId', as: 'pedidos' });
 Pedido.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'usuario' });
 
-module.exports = { sequelize, Usuario, Pedido };
+// 1:1 — un Usuario tiene un Perfil.
+Usuario.hasOne(Perfil, { foreignKey: 'usuarioId', as: 'perfil' });
+Perfil.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'usuario' });
+
+// N:M — un Pedido tiene muchos Productos y un Producto está en muchos Pedidos.
+Pedido.belongsToMany(Producto, {
+  through: PedidoProducto,
+  foreignKey: 'pedidoId',
+  otherKey: 'productoId',
+  as: 'productos',
+});
+Producto.belongsToMany(Pedido, {
+  through: PedidoProducto,
+  foreignKey: 'productoId',
+  otherKey: 'pedidoId',
+  as: 'pedidos',
+});
+
+module.exports = { sequelize, Usuario, Pedido, Producto, PedidoProducto, Perfil };
